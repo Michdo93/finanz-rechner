@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Einkommensteuer DE – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">🧾</span><h1>EINKOMMENSTEUER <em>DE</em></h1><p>Grundtarif · Splittingtarif · Sozialabgaben · Nettolohn · Stand 2024</p></div>
+
+<main>
+  <div class="card">
+    <h2>🧾 Eingabe</h2>
+    <div class="info-box">Berechnung nach § 32a EStG (Steuertarif 2024). Kirchensteuer optional (8 % Bayern/BaWü, sonst 9 %). Solidaritätszuschlag ab zvE > 18.130 € (Einzelveranlagung).</div>
+    <div class="form-grid">
+      <div class="field"><label>Bruttojahreslohn (€)</label><input type="number" id="brutto" min="0" placeholder="60000" step="100"></div>
+      <div class="field">
+        <label>Steuerklasse</label>
+        <select id="stklasse">
+          <option value="1">Klasse I – Ledig / geschieden</option>
+          <option value="3">Klasse III – Verheiratet (Hauptverdiener)</option>
+          <option value="4">Klasse IV – Verheiratet (gleich)</option>
+          <option value="5">Klasse V – Verheiratet (Geringverdiener)</option>
+          <option value="6">Klasse VI – Zweitjob</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Bundesland (Kirchensteuer)</label>
+        <select id="bundesland">
+          <option value="0">Kein Mitglied</option>
+          <option value="8">Bayern / Baden-Württemberg (8 %)</option>
+          <option value="9">Alle anderen Bundesländer (9 %)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Kirchenmitglied</label>
+        <select id="kirche">
+          <option value="0">Nein</option>
+          <option value="1">Ja</option>
+        </select>
+      </div>
+      <div class="field"><label>Werbungskostenpauschale überschritten?</label>
+        <select id="wk">
+          <option value="0">Nein (Pauschale 1.230 € auto.)</option>
+          <option value="1">Ja – Betrag eingeben</option>
+        </select>
+      </div>
+      <div class="field" id="wk-field" style="display:none"><label>Eigene Werbungskosten (€)</label><input type="number" id="wk-betrag" placeholder="2000"></div>
+    </div>
+    <button class="btn" onclick="calcSteuer()">Steuer berechnen</button>
+
+    <div class="result" id="res">
+      <div class="result-header">// Steuerberechnung 2024</div>
+      <div class="result-body">
+        <div class="result-grid">
+          <div class="result-stat"><div class="val" id="rs-brutto">–</div><div class="lbl">Bruttolohn / Jahr</div></div>
+          <div class="result-stat"><div class="val" id="rs-zve">–</div><div class="lbl">Zu versteuerndes Einkommen</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-est">–</div><div class="lbl">Einkommensteuer</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-soli">–</div><div class="lbl">Solidaritätszuschlag</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-kirche">–</div><div class="lbl">Kirchensteuer</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-kv">–</div><div class="lbl">Krankenversicherung</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-rv">–</div><div class="lbl">Rentenversicherung</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-av">–</div><div class="lbl">Arbeitslosen- + PV</div></div>
+        </div>
+        <div class="result-grid" style="margin-top:.75rem">
+          <div class="result-stat" style="border-color:var(--gold)"><div class="val" style="color:var(--gold);font-size:1.4rem" id="rs-netto">–</div><div class="lbl">Nettolohn / Jahr</div></div>
+          <div class="result-stat" style="border-color:var(--gold)"><div class="val" style="color:var(--gold)" id="rs-monat">–</div><div class="lbl">Netto / Monat</div></div>
+          <div class="result-stat"><div class="val" id="rs-grenz">–</div><div class="lbl">Grenzsteuersatz</div></div>
+          <div class="result-stat"><div class="val" id="rs-durch">–</div><div class="lbl">Durchschn. Steuersatz</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Steuerklassen-Übersicht</h2>
+    <table>
+      <thead><tr><th>Klasse</th><th>Personengruppe</th><th>Freibetrag</th></tr></thead>
+      <tbody>
+        <tr><td>I</td><td>Ledig, geschieden, verwitwet (ab 2. Jahr)</td><td>11.604 €</td></tr>
+        <tr><td>II</td><td>Alleinerziehend</td><td>11.604 € + 4.260 € Entlastungsbetrag</td></tr>
+        <tr><td>III</td><td>Verheiratet, Hauptverdiener</td><td>23.208 € (doppelter Grundfreibetrag)</td></tr>
+        <tr><td>IV</td><td>Verheiratet, ähnliches Einkommen</td><td>11.604 €</td></tr>
+        <tr><td>V</td><td>Verheiratet, Geringverdiener (Partner in Kl. III)</td><td>kein Grundfreibetrag</td></tr>
+        <tr><td>VI</td><td>Zweit-/Nebenjob</td><td>kein Freibetrag</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Steuerberatung. Stand: EStG 2024. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+document.getElementById('wk').addEventListener('change',function(){
+  document.getElementById('wk-field').style.display=this.value==='1'?'block':'none';
+});
+
+// Einkommensteuer nach § 32a EStG 2024
+function estGrundfreibetrag(){ return 11604; }
+
+function calcESt(zvE){
+  // Tarif 2024 (§ 32a EStG)
+  const x=zvE;
+  if(x<=11604) return 0;
+  if(x<=17005){ const y=(x-11604)/10000; return (922.98*y+1400)*y; }
+  if(x<=66760){ const z=(x-17005)/10000; return (181.19*z+2397)*z+1025.38; }
+  if(x<=277825) return 0.42*x-10602.13;
+  return 0.45*x-18936.88;
+}
+
+function calcSteuer(){
+  const brutto=parseFloat(document.getElementById('brutto').value)||0;
+  const stk=parseInt(document.getElementById('stklasse').value);
+  const kircheSatz=parseInt(document.getElementById('bundesland').value)/100 * parseInt(document.getElementById('kirche').value);
+  const wkMode=document.getElementById('wk').value;
+  const wkBetrag=wkMode==='1'?(parseFloat(document.getElementById('wk-betrag').value)||1230):1230;
+
+  // Werbungskostenpauschale 2024: 1.230 €
+  const wk=Math.max(wkBetrag,1230);
+
+  // Grundfreibetrag je nach Steuerklasse
+  const grundfb=stk===3?23208:stk===5?0:stk===6?0:11604;
+
+  // Vereinfacht: zvE = Brutto - Werbungskosten - Sonderausgabenpauschale (36 €) - Grundfreibetrag indirekt im Tarif
+  let zvE=Math.max(0,brutto-wk-36);
+
+  // Splittingtarif (Kl. III / IV)
+  let est;
+  if(stk===3){
+    est=2*calcESt(zvE/2);
+  } else if(stk===5){
+    // Kl. V: kein Freibetrag, Progressionsvorbehalt vereinfacht
+    est=calcESt(zvE)*1.15;
+  } else if(stk===6){
+    est=brutto*0.42; // pauschaler Abzug
+  } else {
+    est=calcESt(zvE);
+  }
+  est=Math.max(0,est);
+
+  // Soli (ab zvE > 18.130 single / 36.260 splitting)
+  const soliGrenze=stk===3?36260:18130;
+  let soli=0;
+  if(zvE>soliGrenze) soli=Math.min(est*0.055, (est-soliGrenze*0.18)*0.119);
+  soli=Math.max(0,soli);
+
+  // Kirchensteuer
+  const kirche=est*kircheSatz;
+
+  // Sozialversicherung 2024 (Arbeitnehmeranteil)
+  const bbgRV=90600, bbgKV=62100;
+  const kv=Math.min(brutto,bbgKV)*0.0795; // 15.9% / 2
+  const rv=Math.min(brutto,bbgRV)*0.093;  // 18.6% / 2
+  const av=Math.min(brutto,bbgRV)*0.013;  // 2.6% / 2
+  const pv=Math.min(brutto,bbgKV)*0.01775; // PV 3.4% / 2 (ohne Kinder +0.6pp)
+
+  const gesAbzug=est+soli+kirche+kv+rv+av+pv;
+  const netto=brutto-gesAbzug;
+
+  const grenzSatz=zvE>277825?45:zvE>66760?42:
+    zvE>17005?(181.19*2*(zvE-17005)/10000+2397)/10000*100:
+    zvE>11604?(922.98*2*(zvE-11604)/10000+1400)/10000*100:0;
+
+  const fmtE=n=>new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' €';
+  document.getElementById('rs-brutto').textContent=fmtE(brutto);
+  document.getElementById('rs-zve').textContent=fmtE(zvE);
+  document.getElementById('rs-est').textContent=fmtE(est);
+  document.getElementById('rs-soli').textContent=fmtE(soli);
+  document.getElementById('rs-kirche').textContent=fmtE(kirche);
+  document.getElementById('rs-kv').textContent=fmtE(kv);
+  document.getElementById('rs-rv').textContent=fmtE(rv);
+  document.getElementById('rs-av').textContent=fmtE(av+pv);
+  document.getElementById('rs-netto').textContent=fmtE(netto);
+  document.getElementById('rs-monat').textContent=fmtE(netto/12);
+  document.getElementById('rs-grenz').textContent=grenzSatz.toFixed(1)+' %';
+  document.getElementById('rs-durch').textContent=(est/brutto*100).toFixed(1)+' %';
+  document.getElementById('res').classList.add('show');
+}
+</script>
+</body></html>

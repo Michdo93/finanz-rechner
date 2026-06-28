@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Altersvorsorge – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">🧓</span><h1><em>ALTERS</em>VORSORGE</h1><p>Rentenlücke · Kapitalbedarf · Erforderliche Sparrate</p></div>
+
+<main>
+  <div class="card">
+    <h2>🧓 Persönliche Daten</h2>
+    <div class="info-box">Die gesetzliche Rente beträgt in Deutschland durchschnittlich ca. 48% des letzten Nettoeinkommens (Rentenniveau 2024). Ergänzende Vorsorge schließt die Lücke.</div>
+    <div class="form-grid">
+      <div class="field"><label>Aktuelles Alter (Jahre)</label><input type="number" id="alter" min="18" max="67" placeholder="35"></div>
+      <div class="field"><label>Renteneintrittsalter</label><input type="number" id="renten-alter" min="55" max="75" placeholder="67"></div>
+      <div class="field"><label>Lebenserwartung (Jahre)</label><input type="number" id="lebenserwartung" min="60" max="110" placeholder="90"></div>
+      <div class="field"><label>Aktuelles Nettoeinkommen (€/Monat)</label><input type="number" id="netto" placeholder="3000"></div>
+      <div class="field"><label>Gewünschtes Renteneinkommen (€/Monat)</label><input type="number" id="wunschrente" placeholder="2500"></div>
+      <div class="field"><label>Erwartete gesetzliche Rente (€/Monat)</label><input type="number" id="gesetzl" placeholder="1400"></div>
+      <div class="field"><label>Bereits vorhandenes Kapital (€)</label><input type="number" id="kapital" placeholder="30000"></div>
+      <div class="field"><label>Erwartete Rendite bis Rente (% p.a.)</label><input type="number" id="rendite" min="0" max="20" placeholder="6" step="0.1"></div>
+      <div class="field"><label>Rendite im Rentenalter (% p.a.)</label><input type="number" id="rente-rendite" min="0" max="10" placeholder="2" step="0.1"></div>
+      <div class="field"><label>Inflation (% p.a.)</label><input type="number" id="rente-infl" min="0" max="10" placeholder="2.5" step="0.1"></div>
+    </div>
+    <button class="btn" onclick="calcRente()">Rentenlücke berechnen</button>
+
+    <div class="result" id="res">
+      <div class="result-header">// Altersvorsorge-Analyse</div>
+      <div class="result-body">
+        <div class="result-grid">
+          <div class="result-stat"><div class="val neg" id="rs-luecke">–</div><div class="lbl">Monatliche Rentenlücke</div></div>
+          <div class="result-stat"><div class="val" id="rs-bedarf">–</div><div class="lbl">Kaptialbedarf bei Rente</div></div>
+          <div class="result-stat"><div class="val" id="rs-vorh">–</div><div class="lbl">Kapital bei Rente (Trend)</div></div>
+          <div class="result-stat"><div class="val" id="rs-diff">–</div><div class="lbl">Fehlend / Überschuss</div></div>
+        </div>
+        <div class="result-grid" style="margin-top:.75rem">
+          <div class="result-stat"><div class="val pos" id="rs-sparrate">–</div><div class="lbl">Notwendige Zusatz-Sparrate</div></div>
+          <div class="result-stat"><div class="val" id="rs-jahre">–</div><div class="lbl">Jahre bis Rente</div></div>
+          <div class="result-stat"><div class="val" id="rs-rentenjahre">–</div><div class="lbl">Rentenbezugsjahre</div></div>
+        </div>
+        <div class="info-box" style="margin-top:1rem" id="res-hinweis"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Finanzberatung. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+function fmtE(n,showSign=false){ const s=new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.abs(n))+' €'; return (showSign&&n>0?'+':'')+s; }
+
+function calcRente(){
+  const alter=parseInt(document.getElementById('alter').value)||0;
+  const rentenAlter=parseInt(document.getElementById('renten-alter').value)||67;
+  const lebensEw=parseInt(document.getElementById('lebenserwartung').value)||90;
+  const netto=parseFloat(document.getElementById('netto').value)||0;
+  const wunsch=parseFloat(document.getElementById('wunschrente').value)||0;
+  const gesetzl=parseFloat(document.getElementById('gesetzl').value)||0;
+  const kapital=parseFloat(document.getElementById('kapital').value)||0;
+  const rendite=(parseFloat(document.getElementById('rendite').value)||6)/100;
+  const renteRendite=(parseFloat(document.getElementById('rente-rendite').value)||2)/100;
+  const infl=(parseFloat(document.getElementById('rente-infl').value)||2.5)/100;
+
+  const jahreBisRente=rentenAlter-alter;
+  const rentenjahre=lebensEw-rentenAlter;
+
+  if(jahreBisRente<=0) return alert('Rentenalter muss größer als aktuelles Alter sein');
+
+  // Rentenlücke (heutige Euros)
+  const luecke=Math.max(0,wunsch-gesetzl);
+
+  // Kaptialbedarf bei Renteneintritt (Rentenbarwert – Entnahmeformel)
+  // Barwert einer ewigen Rente, begrenzt auf rentenjahre
+  const r=renteRendite/12;
+  const n=rentenjahre*12;
+  const bedarf=luecke*(r>0?(1-Math.pow(1+r,-n))/r:n);
+
+  // Inflationsanpassung: Wunsch in zukünftigen Euros
+  const inflFaktor=Math.pow(1+infl,jahreBisRente);
+  const bedarfFutur=bedarf*inflFaktor;
+
+  // Kapital bei Rente mit Trendrendite (keine Zusatzsparrate)
+  const R=rendite/12, N=jahreBisRente*12;
+  const kapitalBeiRente=kapital*Math.pow(1+R,N);
+
+  const diff=kapitalBeiRente-bedarfFutur;
+
+  // Notwendige Sparrate
+  let sparrate=0;
+  if(diff<0){
+    sparrate=R>0?(-diff)/((Math.pow(1+R,N)-1)/R):(-diff)/N;
+  }
+
+  document.getElementById('rs-luecke').textContent=fmtE(luecke)+'/Monat';
+  document.getElementById('rs-bedarf').textContent=fmtE(bedarfFutur);
+  document.getElementById('rs-vorh').textContent=fmtE(kapitalBeiRente);
+  const diffEl=document.getElementById('rs-diff');
+  diffEl.textContent=(diff>=0?'+':'')+fmtE(diff,true);
+  diffEl.className='val '+(diff>=0?'pos':'neg');
+  document.getElementById('rs-sparrate').textContent=sparrate>0?fmtE(sparrate)+'/Monat':'✅ Kein Mehrbedarf';
+  document.getElementById('rs-jahre').textContent=jahreBisRente+' Jahre';
+  document.getElementById('rs-rentenjahre').textContent=rentenjahre+' Jahre';
+  document.getElementById('res-hinweis').innerHTML=diff>=0
+    ?`<strong>Gut aufgestellt:</strong> Auf Basis der Annahmen reicht dein Kapitalaufbau aus. Regelmäßige Überprüfung empfohlen.`
+    :`<strong>Handlungsbedarf:</strong> Ohne Zusatzsparrate fehlen voraussichtlich <strong>${fmtE(-diff)}</strong> bei Renteneintritt. Eine zusätzliche Sparrate von <strong>${fmtE(sparrate)}/Monat</strong> schließt die Lücke – bei ${(rendite*100).toFixed(1)}% Rendite p.a.`;
+  document.getElementById('res').classList.add('show');
+}
+</script>
+</body></html>

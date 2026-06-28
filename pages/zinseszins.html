@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zinseszins – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">📈</span><h1><em>ZINS</em>ESZINS</h1><p>Kapitalwachstum · Einmalanlage & Sparrate · Jahres-/Monatszins</p></div>
+
+<main>
+  <div class="card">
+    <h2>📈 Eingabe</h2>
+    <div class="formula">K(n) = K₀ · (1 + p/100)ⁿ + R · ((1+p/100)ⁿ − 1) / (p/100)</div>
+    <div class="form-grid">
+      <div class="field"><label>Startkapital K₀ (€)</label><input type="number" id="k0" min="0" placeholder="10000" step="any"></div>
+      <div class="field"><label>Monatliche Sparrate (€)</label><input type="number" id="rate" min="0" placeholder="200" step="any"></div>
+      <div class="field"><label>Jahreszins p (%)</label><input type="number" id="zins" min="0" max="100" placeholder="7" step="0.01"></div>
+      <div class="field"><label>Laufzeit (Jahre)</label><input type="number" id="jahre" min="1" max="100" placeholder="20"></div>
+      <div class="field">
+        <label>Zinsesrechnung</label>
+        <select id="modus">
+          <option value="1">Jährlich</option>
+          <option value="12" selected>Monatlich</option>
+          <option value="4">Quartalsweise</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="calcZinseszins()">Berechnen</button>
+
+    <div class="result" id="res">
+      <div class="result-header">// Ergebnis nach <span id="res-jahre">–</span> Jahren</div>
+      <div class="result-body">
+        <div class="result-main" id="res-end">–<small> €</small></div>
+        <div class="result-label" id="res-lbl"></div>
+        <div class="result-grid" style="margin-top:1rem">
+          <div class="result-stat"><div class="val" id="res-ein">–</div><div class="lbl">Eingezahlt</div></div>
+          <div class="result-stat"><div class="val pos" id="res-zinsen">–</div><div class="lbl">Zinsen</div></div>
+          <div class="result-stat"><div class="val" id="res-faktor">–</div><div class="lbl">Wachstumsfaktor</div></div>
+        </div>
+
+        <!-- Meilenstein-Tabelle -->
+        <div style="margin-top:1.5rem">
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Entwicklung</div>
+          <table id="milestones">
+            <thead><tr><th>Jahr</th><th>Eingezahlt</th><th>Zinsen</th><th>Gesamtwert</th></tr></thead>
+            <tbody id="milestone-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Schnell-Szenarien</h2>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setScenario(10000,0,3,10)">Tagesgeld 3%/10J</button>
+      <button class="preset-btn" onclick="setScenario(0,100,7,30)">ETF-Sparplan 7%/30J</button>
+      <button class="preset-btn" onclick="setScenario(50000,500,6,25)">Aktiv 6%/25J</button>
+      <button class="preset-btn" onclick="setScenario(1000,50,10,40)">Rendite 10%/40J</button>
+    </div>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Finanzberatung. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+function fmt(n){ return new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+'  €'; }
+
+function calcZinseszins(){
+  const K0=parseFloat(document.getElementById('k0').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||0;
+  const p=parseFloat(document.getElementById('zins').value)||0;
+  const n=parseInt(document.getElementById('jahre').value)||0;
+  const m=parseInt(document.getElementById('modus').value);
+  if(n<1) return alert('Laufzeit eingeben');
+
+  const r=p/100/m;
+  const N=n*m;
+  const endwert=K0*Math.pow(1+r,N) + (r>0 ? rate*(Math.pow(1+r,N)-1)/r : rate*N);
+  const eingezahlt=K0+rate*12*n;
+  const zinsen=endwert-eingezahlt;
+
+  document.getElementById('res-jahre').textContent=n;
+  document.getElementById('res-end').innerHTML=`${fmt(endwert)}<small> €</small>`;
+  document.getElementById('res-lbl').textContent=`Startkapital ${fmt(K0)} + Sparraten ${fmt(rate*12*n)} + Zinsen ${fmt(zinsen)}`;
+  document.getElementById('res-ein').textContent=fmt(eingezahlt);
+  document.getElementById('res-zinsen').textContent=fmt(zinsen);
+  document.getElementById('res-faktor').textContent=(endwert/Math.max(eingezahlt,1)).toFixed(2)+'×';
+
+  // Meilensteine
+  const years=[1,2,3,5,10,15,20,25,30,40,50].filter(y=>y<=n);
+  if(!years.includes(n)) years.push(n);
+  years.sort((a,b)=>a-b);
+  document.getElementById('milestone-body').innerHTML=years.map(y=>{
+    const Ny=y*m;
+    const kv=K0*Math.pow(1+r,Ny)+(r>0?rate*(Math.pow(1+r,Ny)-1)/r:rate*Ny);
+    const ez=K0+rate*12*y;
+    const zn=kv-ez;
+    return `<tr${y===n?' class="highlight-row"':''}><td>${y}</td><td>${fmt(ez)}</td><td>${fmt(zn)}</td><td>${fmt(kv)}</td></tr>`;
+  }).join('');
+  document.getElementById('res').classList.add('show');
+}
+
+function setScenario(k0,rate,p,n){
+  document.getElementById('k0').value=k0;
+  document.getElementById('rate').value=rate;
+  document.getElementById('zins').value=p;
+  document.getElementById('jahre').value=n;
+  calcZinseszins();
+}
+</script>
+</body></html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inflationsrechner – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">📉</span><h1><em>INFLATIONS</em>RECHNER</h1><p>Kaufkraftverlust · Realer Wert · Notwendige Rendite</p></div>
+
+<main>
+  <div class="card">
+    <h2>📉 Kaufkraftverlust berechnen</h2>
+    <div class="formula">Realer Wert = Nominalbetrag / (1 + i)ⁿ</div>
+    <div class="radio-tabs">
+      <input type="radio" name="im" id="im-real" value="real" checked><label for="im-real">Realen Wert berechnen</label>
+      <input type="radio" name="im" id="im-future" value="future"><label for="im-future">Zukünftigen Preis berechnen</label>
+      <input type="radio" name="im" id="im-dauer" value="dauer"><label for="im-dauer">Halbwertszeit berechnen</label>
+    </div>
+    <div class="form-grid" id="infl-grid"></div>
+    <button class="btn" onclick="calcInflation()">Berechnen</button>
+
+    <div class="result" id="res">
+      <div class="result-header">// Ergebnis</div>
+      <div class="result-body">
+        <div class="result-main" id="res-main">–</div>
+        <div class="result-label" id="res-lbl"></div>
+        <div class="result-grid" style="margin-top:1rem">
+          <div class="result-stat"><div class="val" id="rs-nominal">–</div><div class="lbl">Nominalbetrag</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-verlust">–</div><div class="lbl">Kaufkraftverlust</div></div>
+          <div class="result-stat"><div class="val" id="rs-minrendite">–</div><div class="lbl">Mind. Rendite (Werterhalt)</div></div>
+        </div>
+
+        <div style="margin-top:1.25rem" id="jahres-table-wrap">
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Entwicklung nach Jahren</div>
+          <table><thead><tr><th>Jahr</th><th>Nominalbetrag</th><th>Realer Wert</th><th>Kaufkraftverlust</th></tr></thead>
+          <tbody id="infl-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Historische Inflationsraten DE</h2>
+    <table>
+      <thead><tr><th>Zeitraum</th><th>Ø Inflationsrate</th></tr></thead>
+      <tbody>
+        <tr><td>2022 (Energiekrise)</td><td>7,9 %</td></tr>
+        <tr><td>2023</td><td>5,9 %</td></tr>
+        <tr><td>2024 (Schätzung)</td><td>2,2 %</td></tr>
+        <tr><td>2010–2019 (stabil)</td><td>1,2 %</td></tr>
+        <tr><td>2000–2009</td><td>1,7 %</td></tr>
+        <tr><td>EZB-Ziel</td><td>2,0 %</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Finanzberatung. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+const FIELDS={
+  real:   [['betrag','Betrag heute (€)','10000'],['i','Inflationsrate (% p.a.)','2.5'],['n','Zeitraum (Jahre)','20']],
+  future: [['betrag','Betrag heute (€)','10000'],['i','Inflationsrate (% p.a.)','2.5'],['n','Zeitraum (Jahre)','20']],
+  dauer:  [['betrag','Startbetrag (€)','10000'],['i','Inflationsrate (% p.a.)','2.5'],['ziel','Ziel-Kaufkraft (€ heute)','5000']],
+};
+function buildGrid(){
+  const mode=document.querySelector('input[name="im"]:checked').value;
+  document.getElementById('infl-grid').innerHTML=FIELDS[mode].map(([id,lbl,ph])=>
+    `<div class="field"><label>${lbl}</label><input type="number" id="if-${id}" placeholder="${ph}" step="any"></div>`).join('');
+}
+document.querySelectorAll('input[name="im"]').forEach(r=>r.addEventListener('change',buildGrid));
+buildGrid();
+
+function fmtE(n){ return new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' €'; }
+
+function calcInflation(){
+  const mode=document.querySelector('input[name="im"]:checked').value;
+  const betrag=parseFloat(document.getElementById('if-betrag').value)||0;
+  const i=(parseFloat(document.getElementById('if-i').value)||0)/100;
+  let n,result,lbl;
+
+  if(mode==='dauer'){
+    const ziel=parseFloat(document.getElementById('if-ziel').value)||0;
+    if(!ziel||!betrag||!i) return alert('Felder füllen');
+    n=Math.log(ziel/betrag)/Math.log(1/(1+i));
+    result=n;
+    lbl=`Nach ${n.toFixed(1)} Jahren hat ${fmtE(betrag)} nur noch die Kaufkraft von ${fmtE(ziel)}`;
+    document.getElementById('res-main').innerHTML=`${n.toFixed(1)}<small> Jahre</small>`;
+    document.getElementById('jahres-table-wrap').style.display='none';
+    document.getElementById('rs-nominal').textContent=fmtE(betrag);
+    document.getElementById('rs-verlust').textContent=fmtE(betrag-ziel);
+    document.getElementById('rs-minrendite').textContent=(i*100).toFixed(2)+' %';
+  } else {
+    n=parseFloat(document.getElementById('if-n').value)||0;
+    if(!betrag||!n) return alert('Felder füllen');
+    const realwert=betrag/Math.pow(1+i,n);
+    const future=betrag*Math.pow(1+i,n);
+    const anzeige=mode==='real'?realwert:future;
+    lbl=mode==='real'?`${fmtE(betrag)} haben nach ${n} Jahren nur noch die Kaufkraft von ${fmtE(realwert)}`:`Was heute ${fmtE(betrag)} kostet, kostet in ${n} Jahren ${fmtE(future)}`;
+    document.getElementById('res-main').innerHTML=`${fmtE(anzeige)}<small></small>`;
+    document.getElementById('rs-nominal').textContent=fmtE(betrag);
+    document.getElementById('rs-verlust').textContent=fmtE(betrag-realwert);
+    document.getElementById('rs-minrendite').textContent=(i*100).toFixed(2)+' % p.a.';
+
+    // Jahrestabelle
+    const years=[1,2,3,5,10,15,20,25,30].filter(y=>y<=n);
+    if(!years.includes(n)) years.push(n);
+    years.sort((a,b)=>a-b);
+    document.getElementById('infl-body').innerHTML=years.map(y=>{
+      const rv=betrag/Math.pow(1+i,y);
+      return `<tr${y===n?' class="highlight-row"':''}><td>${y}</td><td>${fmtE(betrag)}</td><td>${fmtE(rv)}</td><td>−${((1-rv/betrag)*100).toFixed(1)} %</td></tr>`;
+    }).join('');
+    document.getElementById('jahres-table-wrap').style.display='block';
+  }
+  document.getElementById('res-lbl').textContent=lbl;
+  document.getElementById('res').classList.add('show');
+}
+</script>
+</body></html>

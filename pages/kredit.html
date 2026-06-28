@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kredit & Annuität – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">🏦</span><h1><em>KREDIT</em> & ANNUITÄT</h1><p>Monatliche Rate · Gesamtzinsen · Tilgungsplan</p></div>
+
+<main>
+  <div class="card">
+    <h2>🏦 Eingabe</h2>
+    <div class="formula">A = K · (q−1) / (1−q⁻ⁿ) &nbsp;&nbsp; q = 1 + p/1200</div>
+    <div class="radio-tabs">
+      <input type="radio" name="mode" id="m-rate" value="rate" checked><label for="m-rate">Rate berechnen</label>
+      <input type="radio" name="mode" id="m-laufzeit" value="laufzeit"><label for="m-laufzeit">Laufzeit berechnen</label>
+      <input type="radio" name="mode" id="m-kredit" value="kredit"><label for="m-kredit">Kreditbetrag berechnen</label>
+    </div>
+    <div class="form-grid" id="input-grid"></div>
+    <button class="btn" onclick="calcKredit()">Berechnen</button>
+
+    <div class="result" id="res">
+      <div class="result-header">// Ergebnis</div>
+      <div class="result-body">
+        <div class="result-main" id="res-main">–</div>
+        <div class="result-label" id="res-lbl"></div>
+        <div class="result-grid" style="margin-top:1rem">
+          <div class="result-stat"><div class="val" id="rs-kredit">–</div><div class="lbl">Kreditbetrag</div></div>
+          <div class="result-stat"><div class="val neg" id="rs-zinsen">–</div><div class="lbl">Gesamtzinsen</div></div>
+          <div class="result-stat"><div class="val" id="rs-gesamt">–</div><div class="lbl">Gesamtzahlung</div></div>
+          <div class="result-stat"><div class="val" id="rs-zinssatz">–</div><div class="lbl">Effektiver Jahreszins</div></div>
+        </div>
+
+        <div style="margin-top:1.5rem">
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Tilgungsplan (jährlich)</div>
+          <div style="max-height:320px;overflow-y:auto">
+            <table id="plan-table">
+              <thead><tr><th>Jahr</th><th>Tilgung</th><th>Zinsen</th><th>Rate</th><th>Restschuld</th></tr></thead>
+              <tbody id="plan-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Schnell-Beispiele</h2>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setEx(20000,5.9,60)">Autokredit 20k/5J</button>
+      <button class="preset-btn" onclick="setEx(300000,3.5,360)">Baufinanzierung 300k/30J</button>
+      <button class="preset-btn" onclick="setEx(5000,12,36)">Ratenkredit 5k/3J</button>
+    </div>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Finanzberatung. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+const FIELDS = {
+  rate:     [['K','Kreditbetrag (€)','20000'],['p','Jahreszins (%)','5.9'],['n','Laufzeit (Monate)','60']],
+  laufzeit: [['K','Kreditbetrag (€)','20000'],['p','Jahreszins (%)','5.9'],['A','Monatliche Rate (€)','400']],
+  kredit:   [['A','Monatliche Rate (€)','400'],['p','Jahreszins (%)','5.9'],['n','Laufzeit (Monate)','60']],
+};
+function buildGrid(){
+  const mode=document.querySelector('input[name="mode"]:checked').value;
+  document.getElementById('input-grid').innerHTML=FIELDS[mode].map(([id,lbl,ph])=>
+    `<div class="field"><label>${lbl}</label><input type="number" id="f-${id}" placeholder="${ph}" step="any"></div>`).join('');
+}
+document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',buildGrid));
+buildGrid();
+
+function fmtE(n){ return new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' €'; }
+
+function calcKredit(){
+  const mode=document.querySelector('input[name="mode"]:checked').value;
+  let K,p,n,A;
+  if(mode==='rate'){
+    K=parseFloat(document.getElementById('f-K').value);
+    p=parseFloat(document.getElementById('f-p').value);
+    n=parseInt(document.getElementById('f-n').value);
+    if(!K||!p||!n) return alert('Alle Felder füllen');
+    const q=1+p/1200;
+    A=K*(q-1)/(1-Math.pow(q,-n));
+  } else if(mode==='laufzeit'){
+    K=parseFloat(document.getElementById('f-K').value);
+    p=parseFloat(document.getElementById('f-p').value);
+    A=parseFloat(document.getElementById('f-A').value);
+    if(!K||!p||!A) return alert('Alle Felder füllen');
+    const q=1+p/1200;
+    n=Math.ceil(-Math.log(1-K*(q-1)/A)/Math.log(q));
+  } else {
+    A=parseFloat(document.getElementById('f-A').value);
+    p=parseFloat(document.getElementById('f-p').value);
+    n=parseInt(document.getElementById('f-n').value);
+    if(!A||!p||!n) return alert('Alle Felder füllen');
+    const q=1+p/1200;
+    K=A*(1-Math.pow(q,-n))/(q-1);
+  }
+
+  const q=1+p/1200;
+  const gesamt=A*n;
+  const zinsen=gesamt-K;
+  document.getElementById('res-main').innerHTML=`${fmtE(A)}<small> / Monat</small>`;
+  document.getElementById('res-lbl').textContent=`Laufzeit: ${n} Monate (${(n/12).toFixed(1)} Jahre)`;
+  document.getElementById('rs-kredit').textContent=fmtE(K);
+  document.getElementById('rs-zinsen').textContent=fmtE(zinsen);
+  document.getElementById('rs-gesamt').textContent=fmtE(gesamt);
+  document.getElementById('rs-zinssatz').textContent=(p).toFixed(2)+' % p.a.';
+
+  // Tilgungsplan (jährlich)
+  let rest=K;
+  const rows=[];
+  for(let j=1;j<=Math.ceil(n/12);j++){
+    let tJahr=0,zJahr=0;
+    const monate=Math.min(12,(n-(j-1)*12));
+    for(let m=0;m<monate;m++){
+      const z=rest*(q-1);
+      const t=Math.min(A-z,rest);
+      zJahr+=z; tJahr+=t; rest=Math.max(0,rest-t);
+    }
+    rows.push(`<tr${rest<0.01?' class="highlight-row"':''}><td>${j}</td><td>${fmtE(tJahr)}</td><td>${fmtE(zJahr)}</td><td>${fmtE(A*monate)}</td><td>${fmtE(Math.max(0,rest))}</td></tr>`);
+    if(rest<=0.01) break;
+  }
+  document.getElementById('plan-body').innerHTML=rows.join('');
+  document.getElementById('res').classList.add('show');
+}
+
+function setEx(K,p,n){
+  document.querySelector('input[name="mode"][value="rate"]').checked=true;
+  buildGrid();
+  document.getElementById('f-K').value=K;
+  document.getElementById('f-p').value=p;
+  document.getElementById('f-n').value=n;
+  calcKredit();
+}
+</script>
+</body></html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROI / NPV / IRR – FinanzRechner</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">💰 <span>FINANZ</span>RECHNER</a>
+  <button id="nav-toggle" class="nav-toggle" aria-label="Menü"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="zinseszins.html">Zinseszins</a></li><li><a href="kredit.html">Kredit</a></li><li><a href="sparen.html">Sparen</a></li><li><a href="rente.html">Rente</a></li><li><a href="steuer.html">Steuer DE</a></li><li><a href="inflation.html">Inflation</a></li><li><a href="investition.html">ROI / NPV</a></li>
+  </ul>
+</div></nav>
+
+<div class="page-header"><span class="icon">🎯</span><h1>ROI / <em>NPV</em> / IRR</h1><p>Return on Investment · Kapitalwert · Interner Zinsfuß</p></div>
+
+<main>
+  <!-- ROI -->
+  <div class="card">
+    <h2>🎯 Return on Investment (ROI)</h2>
+    <div class="formula">ROI = (Erlös − Investition) / Investition × 100</div>
+    <div class="form-grid">
+      <div class="field"><label>Investitionsbetrag (€)</label><input type="number" id="roi-inv" placeholder="50000" step="any"></div>
+      <div class="field"><label>Erlös / Rückfluss (€)</label><input type="number" id="roi-erl" placeholder="65000" step="any"></div>
+      <div class="field"><label>Zeitraum (Jahre)</label><input type="number" id="roi-n" placeholder="3" step="any"></div>
+    </div>
+    <button class="btn" onclick="calcROI()">ROI berechnen</button>
+    <div class="result" id="roi-res">
+      <div class="result-header">// ROI-Ergebnis</div>
+      <div class="result-body">
+        <div class="result-grid">
+          <div class="result-stat"><div class="val" id="roi-gesamt">–</div><div class="lbl">ROI gesamt</div></div>
+          <div class="result-stat"><div class="val" id="roi-pa">–</div><div class="lbl">ROI p.a. (annualisiert)</div></div>
+          <div class="result-stat"><div class="val" id="roi-gewinn">–</div><div class="lbl">Gewinn / Verlust</div></div>
+          <div class="result-stat"><div class="val" id="roi-amort">–</div><div class="lbl">Amortisationsdauer</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NPV -->
+  <div class="card">
+    <h2>📊 Kapitalwert (NPV – Net Present Value)</h2>
+    <div class="formula">NPV = −I₀ + Σ CFₜ / (1+r)ᵗ</div>
+    <div class="info-box">Gibt den heutigen Wert aller zukünftigen Zahlungsströme an. NPV &gt; 0 → Investition lohnt sich.</div>
+    <div class="form-grid">
+      <div class="field"><label>Anfangsinvestition I₀ (€)</label><input type="number" id="npv-i0" placeholder="100000" step="any"></div>
+      <div class="field"><label>Kalkulationszinssatz r (%)</label><input type="number" id="npv-r" placeholder="8" step="0.1"></div>
+    </div>
+    <div id="npv-rows">
+      <div style="font-size:.78rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem">Jährliche Cashflows</div>
+      <div id="cf-rows"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button onclick="addCF()" class="preset-btn">+ Cashflow-Jahr</button>
+        <button onclick="removeCF()" class="preset-btn">− Letztes</button>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:1.25rem" onclick="calcNPV()">NPV berechnen</button>
+    <div class="result" id="npv-res">
+      <div class="result-header">// NPV-Ergebnis</div>
+      <div class="result-body">
+        <div class="result-grid">
+          <div class="result-stat"><div class="val" id="npv-val">–</div><div class="lbl">Kapitalwert (NPV)</div></div>
+          <div class="result-stat"><div class="val" id="npv-sumcf">–</div><div class="lbl">Summe Cashflows</div></div>
+          <div class="result-stat"><div class="val" id="npv-irr">–</div><div class="lbl">Interner Zinsfuß (IRR)</div></div>
+          <div class="result-stat"><div class="val" id="npv-empf">–</div><div class="lbl">Empfehlung</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><p>FinanzRechner © 2025 – Keine Finanzberatung. <a href="../index.html">Alle Rechner</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+// ── ROI ──
+function calcROI(){
+  const inv=parseFloat(document.getElementById('roi-inv').value)||0;
+  const erl=parseFloat(document.getElementById('roi-erl').value)||0;
+  const n=parseFloat(document.getElementById('roi-n').value)||1;
+  if(!inv) return alert('Investitionsbetrag eingeben');
+  const roi=(erl-inv)/inv*100;
+  const roiPA=(Math.pow(erl/inv,1/n)-1)*100;
+  const gewinn=erl-inv;
+  const amort=inv/(Math.max(gewinn,1)/n);
+  const fmtE=v=>new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(v)+' €';
+  document.getElementById('roi-gesamt').textContent=roi.toFixed(2)+' %';
+  document.getElementById('roi-gesamt').className='val '+(roi>=0?'pos':'neg');
+  document.getElementById('roi-pa').textContent=roiPA.toFixed(2)+' % p.a.';
+  document.getElementById('roi-gewinn').textContent=(gewinn>=0?'+':'')+fmtE(gewinn);
+  document.getElementById('roi-gewinn').className='val '+(gewinn>=0?'pos':'neg');
+  document.getElementById('roi-amort').textContent=amort>0?amort.toFixed(1)+' Jahre':'–';
+  document.getElementById('roi-res').classList.add('show');
+}
+
+// ── Cashflow-Reihen ──
+let cfCount=3;
+function renderCFRows(){
+  document.getElementById('cf-rows').innerHTML=[...Array(cfCount)].map((_,i)=>
+    `<div class="field" style="margin-bottom:.5rem">
+      <label>Jahr ${i+1} Cashflow (€)</label>
+      <input type="number" id="cf-${i}" placeholder="${20000+i*2000}" step="any">
+    </div>`).join('');
+}
+function addCF(){ if(cfCount<15) cfCount++; renderCFRows(); }
+function removeCF(){ if(cfCount>1) cfCount--; renderCFRows(); }
+renderCFRows();
+
+// IRR via Newton-Raphson
+function calcIRR(i0,cfs){
+  let r=0.1;
+  for(let iter=0;iter<100;iter++){
+    let npv=-i0, dnpv=0;
+    cfs.forEach((cf,t)=>{ npv+=cf/Math.pow(1+r,t+1); dnpv-=(t+1)*cf/Math.pow(1+r,t+2); });
+    if(Math.abs(dnpv)<1e-10) break;
+    const rNew=r-npv/dnpv;
+    if(Math.abs(rNew-r)<1e-8){ r=rNew; break; }
+    r=rNew;
+  }
+  return r;
+}
+
+function calcNPV(){
+  const i0=parseFloat(document.getElementById('npv-i0').value)||0;
+  const r=(parseFloat(document.getElementById('npv-r').value)||8)/100;
+  const cfs=[...Array(cfCount)].map((_,i)=>parseFloat(document.getElementById(`cf-${i}`).value)||0);
+  if(!i0) return alert('Anfangsinvestition eingeben');
+  const npv=-i0+cfs.reduce((s,cf,t)=>s+cf/Math.pow(1+r,t+1),0);
+  const sumCF=cfs.reduce((s,c)=>s+c,0);
+  const irr=calcIRR(i0,cfs);
+  const fmtE=v=>new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(v)+' €';
+  const npvEl=document.getElementById('npv-val');
+  npvEl.textContent=(npv>=0?'+':'')+fmtE(npv);
+  npvEl.className='val '+(npv>=0?'pos':'neg');
+  document.getElementById('npv-sumcf').textContent=fmtE(sumCF);
+  document.getElementById('npv-irr').textContent=isFinite(irr)?( irr*100).toFixed(2)+' %':'–';
+  document.getElementById('npv-empf').textContent=npv>=0?'✅ Lohnenswert':'❌ Nicht lohnenswert';
+  document.getElementById('npv-res').classList.add('show');
+}
+</script>
+</body></html>
